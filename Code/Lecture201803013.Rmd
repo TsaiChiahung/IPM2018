@@ -1,0 +1,393 @@
+---
+title: "社會科學統計方法"
+subtitle: "資料結構、資料讀取、資料匯出、常用指令(v1.1)"
+author: "蔡佳泓"
+job: "東亞所"
+date: '2018/3/13'
+output: 
+  html_document:
+    toc: TRUE # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+options(knitr.table.format = "html")
+```
+
+---
+# 課程目標
+本週上課將介紹`R`的資料讀取、資料匯出、基本指令，也就是`R`可以讀取的外部資料，包括統計軟體、試算表軟體、編輯軟體、網路等等資料。例如：
+
+```{r echo=TRUE}
+df <- read.table("https://stats.idre.ucla.edu/stat/data/test.txt", header=T)
+head(df)
+```
+在讀取資料之前，我們可以先告知系統，檔案所在的資料夾，這樣做可以讓指令看起來比較簡潔。如果後續有存放檔案，也可以就此直接存放到該指定路徑下的資料夾。例如：
+
+```markdown
+getwd()
+setwd("/Users/Apple/Desktop/Rwork") #MacOS
+"c:/Documents and Settings/My  Document/Rwork" #Windows
+```
+`getwd()`函數可以傳回我們目前所在的資料夾。'setwd()'則可以變更工作目錄。  
+請從Moodle下載解壓縮本次上課所用到的資料。
+
+---
+
+# 匯入資料
+## CSV 資料
+RStudio(1.1.423)可以從File-->Import Dataset開啟Text, Excel, SPSS, Stata, SAS等格式的資料。其中Text檔案又分為base以及rdr，前者比較容易，後者則需要用到套件，但是可以控制分隔符號，大致上效果一樣。  
+如果要用語法。首先，`R`可以讀取用csv格式儲存的資料，例如：
+
+```{r echo=TRUE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+csv1<-read.csv("councilor.csv", header=TRUE, sep=",", fileEncoding = 'BIG5')
+head(csv1)
+```
+這筆台北市中山區的陳炳甫議員的議員配合款部分資料來自於[議員投票指南](https://councils.g0v.tw)  
+指令中的`header=TRUE`表示第一列被認為是變數名稱，而`sep`規範分隔的符號，`fileEncoding=BIG5`則是將文字編碼為中文。
+`R`讓使用者控制資料中的字串是否視為因素資料，也就是用`stringAsFactors`控制：
+```{r echo=TRUE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+csv2<-read.csv("councilor.csv", header=TRUE, sep=",", fileEncoding = 'BIG5', stringsAsFactors = F)
+```
+比較資料中的變數屬性，請輸入 
+```{r echo=TRUE}
+class(csv1$unit)
+class(csv2$unit)
+```
+
+字串可以轉換成數字，但是因素無法轉換成數字。  
+因為資料裡面的中文常常無法顯示在圖形。請先輸入以下兩行指令列出目前可以使用的字體：  
+ <span style="color:blue">install.packages('extrafont'); library(extrafont)</span>  
+ <span style="color:blue">font_import(); fonts()</span>  
+ 
+然後選擇其中的中文字型，例如明體，即可顯示中文字型於圖形中： 
+
+```{r echo=TRUE}
+par(family='MingLiU'); 
+barplot(table(csv1$unit))
+```
+
+或者選擇其他中文字型，例如粗明體，利用`ggplot2`的繪圖功能： 
+
+```{r echo=TRUE}
+library(ggplot2)
+p<-ggplot(data=csv1, aes(x=factor(unit))) +
+  geom_bar(stat="count") +
+  theme(text=element_text(family="MingLiU", size=14))
+p
+``` 
+
+## 文字資料(txt)
+`read.table()`可以讀取用txt格式儲存的表格資料，該資料的欄位用空白區隔，例如：
+```{r echo=TRUE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+students<-read.table("Studentsfull.txt", header=TRUE, sep="")
+head(students)
+```
+
+`scan()`可以讀取向量型態的外部資料，但是無法讀取表格，是一個處理簡單資料的指令，首先以數值資料舉例：
+```{r echo=TRUE}
+scan('voteshare', comment.char = '#', dec='.')
+```
+
+其次以字串與數值資料舉例：
+```{r echo=TRUE}
+scan('latticegraph', what=c('',''), comment.char = '#', sep=',')
+```
+
+從以上例子可以看出，`scan()`的功能比較簡單，而`read.table()`或是`read.csv()`的功能比較完備。
+
+## 統計資料
+### Stata
+Stata本身可以儲存資料為csv檔或其他檔案，但是`R`有套件可以直接讀取。Stata的12版以前資料則可以用`foreign`這個套件。例如UCLA的[Institue for Digital Research and Education（idre）](https://stats.idre.ucla.edu)的資料：
+
+```{r echo=TRUE}
+library(foreign)
+udata1<-read.dta("https://stats.idre.ucla.edu/stat/data/test.dta")
+head(udata1)
+```
+
+如果讀取Stata 的13版以後的資料需要`readstata13`這個套件：  
+```{r echo=T}
+library(readstata13)
+udata2<-read.dta13("Mystata.dta")
+head(udata2)
+```
+`convert.factors`這個參數控制是否將變數的值轉為因素，如果不轉為因素，則維持為整數或者數值。
+```{r echo=T}
+udata3<-read.dta13("Mystata.dta", convert.factors=F)
+class(udata2$partyid); class(udata3$partyid)
+table(udata2$partyid)
+```
+
+### SPSS
+`foreign`的套件也可以讀取SPSS的資料：
+```{r echo=TRUE}
+library(foreign)
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+dv<-read.spss('PP0797B2.sav', use.value.labels=F, to.data.frame=TRUE)
+table(dv$Q1)
+```
+
+程式中 use.value.labels=F表示讀取資料時並不會使用資料中原有的變數標記，例如低、中、高教育程度會變成 1、2、3。這樣做的好處是不必把類別變數轉換成數字，壞處則是需要對照原有的資料才能得知每一個值的意義。如果沒有設定 to.data.frame=T，讀取的資料會轉換成列表。請嘗試去掉use.value.labels=F，也就是`read.spss()`的內建值。  
+另一個讀取 SPSS 資料的方法是先下載`memisc`這個套件：
+
+```{r echo=TRUE}
+library(memisc)
+udata4<-as.data.set(spss.system.file('pp0797B2.sav'))
+udata4[1:4, 1:5]
+```
+
+## 網路連結資料
+`R`可以讀取網路的連結資料，讓使用者方便下載分析。例如[idre](https://stats.idre.ucla.edu)的資料：
+```{r echo=TRUE}
+test.missing <- read.table("https://stats.idre.ucla.edu/stat/data/test_missing_comma.txt",
+    header = TRUE, sep = ",")
+head(test.missing)
+```
+
+也請到[DSP資料中心](http://data.dsp.im)的資料集找尋感興趣的資料，例如[美元匯率](http://data.dsp.im/dataset/20e67a67-61a5-40db-a788-14bb02a3591b/resource/d68c5762-8321-49bf-8102-23c38ee3c50b/download/.csv)，請問有幾筆匯率的資料？
+
+```{r, include=FALSE}
+df<-read.csv('http://data.dsp.im/dataset/20e67a67-61a5-40db-a788-14bb02a3591b/resource/d68c5762-8321-49bf-8102-23c38ee3c50b/download/.csv', header=TRUE)
+nrow(df)
+```
+
+# 資料匯出
+`write.table()`可以匯出資料成為txt或是csv格式到指定的目錄，例如載入一個現有的檔案：
+```{r echo=TRUE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+vs<-scan('voteshare', comment.char = '#', dec='.')
+vs
+```
+
+增加新的觀察值在vs資料中，然後匯出資料成為txt檔：
+```{r echo=TRUE}
+scan('voteshare', comment.char = '#', dec='.')
+vsnew<-c(vs, 61.9, 31.8, 44.5)
+vsnew
+write.table(vsnew,'vsnew.txt')
+read.table('vsnew.txt')
+```
+或者合併資料，並匯出資料為csv檔：
+```{r echo=TRUE}
+de<-data.frame(name=state.abb, region=state.region, area=state.area)
+head(de)
+write.csv(de, 'state.csv')
+state<-read.csv('state.csv', header=TRUE)
+head(state)
+```
+
+在合併變數成為一個資料框時，最好給定每一個欄位一個變數名稱，以方便日後分析。而在執行`write.csv()`時，不需要指定分隔的符號，在重新讀取時，也不需要刻意指定，仍然可以匯入正確的資料。
+
+
+# 常用指令
+## 管理環境空間
+`R`有 global 這個環境空間中儲存命令列中所建立的任何變數，若要了解 global 環境空間有哪些物件，可以使用`globalenv()` 這個函數，：
+```{r echo=TRUE}
+globalenv()
+ls(envir = globalenv(),10)
+```
+`ls()`指令回傳在特定環境空間內的物件。  
+以下介紹與環境空間有關的指令：
+
+- 1. `attach()`：在工作環境中，可以把資料框、向量附加到搜尋的路徑，使得變數對`R`是直接可見的。但是attach無法儲存更改後的資料，因此要記得匯出資料，或者是用語法紀錄。例如：
+```{r echo=TRUE}
+head(csv2)
+attach(csv2)
+contracter
+contracter[1]<-"未發包"
+csv2$contracter[10]<-"台球"
+csv2
+detach(csv2)
+csv2
+```
+
+上面的例子顯示，如果只是更改向量的元素，而不是更改資料框加上向量的元素，那麼並不會真正改變資料框的內容，而一旦更動，即使`detach()`該資料集，也會維持其變動。  
+
+- 2. `detach()`：從工作環境移除已經附加的資料框、向量，以避免混淆。
+- 3. `rm(list=ls())`：從工作環境移除所有的向量、列表、資料框等等。  
+- 4. `rm()`：刪除特定的向量、列表、資料框等等。
+- 5. `save.image()`：儲存環境空間內所有的資料與結果。  
+- 6. `load()`：下載所有資料與結果。
+
+```{r echo=TRUE}
+rm(list=ls()) #remove all data
+data(mtcars) #suppose we analyze mtcars
+m1<-lm(mpg ~ cyl, data=mtcars) #regression
+summary(m1) #results
+mydata<-data.frame(date=as.Date(c("2018-03-13","2018-03-14","2018-03-15"), format='%Y-%m-%d'), workinghours=c(4, 3, 4)) #create your own data
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia") #working directory
+save.image("test.Rdata") #save all results to Rdata
+rm(list=ls()) #remove all data
+load("test.Rdata") #load Rdata
+ls(envir = globalenv(),10) #display objects in this environment
+mydata #diplay your data
+```
+
+- 7. `saveRds()`：儲存成RDS  
+如果只有單一的物件，可以考慮`saveRDS()`。如果不想儲存原來的物件名稱，也可以考慮`saveRDS()`。
+```{r echo=T}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+vs<-scan('voteshare', comment.char = '#', dec='.')
+vs
+vs2<-vs/100
+saveRDS(vs, "vs.rds")
+saveRDS(vs2, 'vs2.rds')
+rm(vs); rm(vs2)
+vs<-readRDS('vs.rds')
+vs2<-readRDS('vs2.rds')
+vs; vs2
+```
+
+`saveRDS()`的優點是雖然一次只儲存一個物件，但是藉由儲存，可以避免新的物件蓋過舊的物件，新舊物件可以並存。
+
+## 程式相關
+- `cat()`：顯示向量以及運算結果，並可以加上文字，並且用"斜線n"參數換行：
+```{r echo=TRUE}
+x<-c(2,4,6)
+cat(x, "\n");
+cat("summation:", sum(x), "\n", "average:", mean(x))
+```
+
+- `print()`：顯示資料框、向量、列表等等，但是無法附加上文字。
+- `source()`：`R`可以讀取既有指令的檔案，在不必開啟命令稿的情況下直接執行多行程式，可節省許多篇幅以及時間。例如我們寫一個自訂函數，語法很長，我們先存成一個語法檔，未來可以直接執行。
+```markdown
+sink("twohistograms.R") #define a new script file
+cat("set.seed(02138)") #input a function that sets starting number for random number
+cat("\n") #end of line
+cat("#write R script to a file without opening a document")
+cat("\n")  #end of line
+ cat("fnorm<-function(mu){            #create a function with a parameter: mu
+      sample.o<-rnorm(20,mu,1/sqrt(mu))  #define the 1st vector that generates random numbers
+      sample.i<-sample.o+runif(1,0,10)  #define the 2nd vector that generates random numbers
+      par(mfrow=c(1,2))                 #set parameter of graphic for 1*2 graphics
+      hist(sample.o, col=1, main='',    #histogram with Basic R
+                xlab='Original sample')
+             hist(sample.i, col=4, main='', #another histogram
+              xlab='Original sample + random number')
+      }")
+ cat("\n")  #end of function
+ sink()     #save the script in the specified file
+file.show("twohistograms.R") #Opening an editor to show the script
+```
+我們建立 fnorm()這個函數，並且存成一個語法檔("twohistograms.R")，並且用`file.show()`顯示出來。以後就可以執行它。  
+使用`source()`函數，執行"twohistograms.R"此一語法檔，產生一個自訂函數，然後輸入參數便可顯示結果。請執行上面的指令之後，自行輸入以下兩行語法：
+
+```markdown
+source("twohistograms.R")
+fnorm(1)
+```
+如果執行成功會看到以下圖形：
+
+```{r echo=FALSE}
+fnorm<-function(mu){            #create a function with a parameter: mu
+      sample.o<-rnorm(20,mu,1/sqrt(mu))  #define the 1st vector that generates random numbers
+      sample.i<-sample.o+runif(1,0,10)  #define the 2nd vector that generates random numbers
+      par(mfrow=c(1,2))                 #set parameter of graphic for 1*2 graphics
+      hist(sample.o, col=1, main='',    #histogram with Basic R
+                xlab='Original sample')
+             hist(sample.i, col=4, main='', #another histogram
+              xlab='Original sample + random number')
+      }
+fnorm(1)
+```
+
+確定一下工作目錄的確多了"twohistograms.R"此一語法檔。
+
+- `with()`：當環境空間有一個以上的資料框，為了避免混淆，可以使用該指令進行分析：
+```{r echo=TRUE}
+library(car)
+with(Duncan, histogram(income, col=2))
+with(Salaries, histogram(salary, col=6))
+```
+
+注意，該指令不適用於矩陣，例如state.x77。
+
+## 資料相關
+- `names()`：顯示資料框的變數名稱，例如：
+```{r echo=TRUE}
+names(mtcars)
+```
+
+注意，該指令不適用於矩陣，例如state.x77。
+
+- `which()`：顯示特定變數。例如，哪些樹的圓周符合條件：
+```{r echo=TRUE}
+which(Orange$circumference>100)
+```
+
+看起來有相當多的樹木胸圍超過100公釐（10公分），但是到底有哪些樹符合這個條件？可應用`which()`函數加以篩選：
+```{r echo=TRUE}
+oc<-which(Orange$circumference>100) #create a vector of data that meets a condition
+oc
+Orange[oc,] #match data with the vector
+```
+  
+oc是滿足樹的圓周超過100公釐的觀察值，而以該資料框配對這些觀察值，只留下可以配對的每一列觀察值。
+  
+- `rep(A, n)`：重複A數值或者字串n次
+```{r echo=TRUE}
+rep(3, 5)
+c(rep("大", 3), rep("中", 1), rep("小",2))
+```
+
+- `seq(i,j)`：傳回i到j的連續數字
+```{r echo=TRUE}
+seq(1,10)
+seq(100,110, by=2)
+```
+
+- `seq(i:j)`：傳回i到j的順位數字
+```{r echo=TRUE}
+seq(5:10)
+seq(100:110)
+```
+
+# 作業
+1. 請匯入這筆ire的資料hsb2_small("https://stats.idre.ucla.edu/stat/data/hsb2_small.csv")，並且顯示該資料的變數名稱。
+```{r include=FALSE}
+hsb2.small <- read.csv("https://stats.idre.ucla.edu/stat/data/hsb2_small.csv")
+names(hsb2.small)
+```
+2. 請使用site="http://faculty.gvsu.edu/kilburnw/nes2008.RData"
+  以及load(file=url(site))。由以上指令讀取資料後，請先列出V083097的分佈。然後把這個變數重新編碼為「民主黨」(Democrat)、「共和黨」(Republican)、「獨立」(Independent)、「其他政黨」（Other party (SPECIFY)），然後列出這個變數的次數分配。
+```{r include=FALSE}
+site="http://faculty.gvsu.edu/kilburnw/nes2008.RData"
+load(file=url(site))
+party<-as.character(nes08$V083097)
+party[nes08$V083097=='1. Democrat']<-'民主黨'
+party[nes08$V083097=='2. Republican']<-'共和黨'
+party[nes08$V083097=='3. Independent']<-'獨立選民'
+party[nes08$V083097=='4. Other party (SPECIFY)']<-'其他政黨'
+party[nes08$V083097=='5. No preference {VOL}']<-'都不喜歡'
+table(party)
+```
+
+3. 請匯出hsb2_small的資料為Text格式以及rds格式。
+```{r include=FALSE}
+write.table(hsb2.small, 'hsb2.txt')
+saveRDS(hsb2.small, 'hsb2.rds')
+```
+
+4. 請匯入2008年的總統選舉資料(2008Election.csv)，並且找出國民黨得票率最高的town.id。（提示：最大值的函數為max()）
+```{r include=FALSE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+DF<-read.csv("2008Election.csv",sep=',',header=T)
+DF$KMTvs<-with(DF,votes.of.Ma.Ying.jeou..KMT./valid.vote)
+DF[which(DF$KMTvs==max(DF$KMTvs)),]
+```
+
+5. 請嘗試匯入本週課程所使用的studentsfull檔案，但是這一次用`read.csv()`。
+```{r include=FALSE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+students<-read.csv("Studentsfull.txt", header=TRUE, sep="")
+```
