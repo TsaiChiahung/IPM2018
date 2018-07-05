@@ -1,0 +1,621 @@
+---
+title: "Introducing R"
+subtitle: "Sub-setting, Control-flow, For-loop(v1.0)"
+author: "Chia-hung Tsai (Election Study Center, NCCU)"
+job: "東亞所"
+date: 'Thursday, July 12, 2018, 5:10-6:30 p.m.'
+output: 
+  html_document:
+    toc: TRUE # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+    fig_caption: true
+    #pandoc_args: ["-F","pandoc-crossref"]
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+<style>
+body {
+    background-color: #EEE8AA;
+    font-size: 22px;
+    color: #171717;
+    font-family:  Times, "王漢宗細圓體繁", "新細明體", "BiauKai", sans-serif; cursive;
+    line-height: 2;
+}
+blue {font-family: georgia; 
+      color: blue}
+fr  {font-family: georgia; 
+      color: firebrick}
+</style>
+
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, digits = 3)
+options(knitr.table.format = "html", digits = 3)
+```
+
+# Goal
+<li>This course will introduce control-flow and loops. `R` can repeat and terminate the commands according to the conditions given by us. It is very useful for data generation and data clean. For example, we randomly draw ten people and we want to decide whether they are eligible for our survey based on their ages. We can write codes as follows:</li>
+
+```{r echo=TRUE}
+age<-c(34, 12, 19, 21, 22, 30, 16, 18, 17, 39)
+ f<-function(x){
+  interview<-ifelse(x>=18, "Yes", "No")
+  return(data.frame(id=1:10, Age=x, Interview=interview, row.names=NULL))
+ }
+f(age)
+#knitr::kable(f(age))
+```
+
+
+<li>Sub-setting data is also very useful for computing; we can select part of data for analysis. Control-flow and loops also require data subset. </li>
+
+---
+
+# Subsetting
+
+<li>We will discuss subsetting of vector, list, array, and data frame. </li>
+
+## vector
+<li>We use index and <fr>which()</fr> function to sub-set vectors.</li>
+
+### index
+
+<li>We can express a variable as  $x_{i}$, the subscript $i$ means the $i$ th element of it, which is called index. We can subset a vector by indexing it:</li>
+
+```{r echo=TRUE}
+state.name[1]
+state.abb[1:4]
+head(sleep)
+sleep$extra[nrow(sleep)]
+```
+
+### which()
+
+<li><fr>which()</fr> function can filter out elements within a vector. For example, we can find out which states that have "B" and "C" as the first letter in their names：</li>
+```{r echo=TRUE}
+state.abb[1:10]
+state.abb.abb<-substr(state.abb, 1,1)
+state.abb[which(state.abb.abb=="B")]
+state.abb[which(state.abb.abb=="C")]
+```
+
+<li>Here we use <fr>substr(A, i, j)</fr> function to grab the first letter of state names. A means the vector, i means the first letter to get, and j means the last letter. </li> <li>We grab the first letter of each state and save it as a vector, state.abb.abb. Then we use <fr>which()</fr> fucntion to match the vector of abbrevation, state.abb.</li>
+<li>Please try to find out how many states are larger than 10,000 square miles</li>  
+```{r include=FALSE}
+state.areabig<-which(state.area>=10e+4)
+length(state.areabig)
+```
+
+## list
+<li>Let's construct a list that has vector and data frame first.</li>
+```{r echo=TRUE}
+ListA<-list(height=90, width=120, string=state.abb[1:2], data=state.area)
+ListA
+```
+
+### index
+<li>We can index the vector from a list.</li>
+```{r echo=TRUE}
+ListA[c(1)]
+```
+<li>We can either index an object or its elements directly from a list. </li>
+```{r echo=TRUE}
+ListA[c(3)]
+ListA[[3]]
+```
+<li>The name of an object can be indexed.</li>
+```{r echo=TRUE}
+ListA["data"]
+```
+
+
+
+ 
+
+---
+
+## Matrix and Array
+### Index
+<li>A typical matrix is set up as follows:</li>  
+\begin{bmatrix}
+    x_{11}       & x_{12} & x_{13} & \dots & x_{1c} \\
+    x_{21}       & x_{22} & x_{23} & \dots & x_{2c} \\
+    \ldots \\
+    x_{r1}       & x_{r2} & x_{r3} & \dots & x_{rc}
+\end{bmatrix}
+<li>$x_{11},\ldots, x_{r1}$ are in the same column, and $x_{11},\ldots, x_{1c}$ are in the same row. So $x_{,1}$ represents all elements in the 1st column, and $x_{1,}$ means all elements in the 1st row.  </li>
+<li>Suppose there is a $3\times 3$ matrix, we can index one or more than one elements, or replace them. </li>
+```{r echo=TRUE}
+m1<-matrix(c(1:9), 3, 3)
+m1
+print(m1[2,2]) #1
+print(m1[c(1:2)]) #2
+print(m1[c(1,2),c(1,2)]) #3
+print(m1[c(1,3),c(1,3)]) #4
+print(m1[,1]) #5
+m1[3,3]<-"Hello" #6
+m1
+```
+
+<li>Notice that the ordered pairs $c(1,2), c(1,2)$ specify the elements at (1,1),(2,1),(1,2),(2,2). That returns:</li>
+  
+\begin{bmatrix}
+1 & 4 \\
+2 & 5 
+\end{bmatrix}
+
+### which()
+<li>We can use <fr>which()</fr> to select data that meet our condition in a matrix or array. For example, we can get part of array accoring to our criterion and show the result as an array. Then we can match the original array with the selected one. </li>
+```{r echo=TRUE}
+T <- array(1:20, dim=c(4,5)); T
+ok <- which(T >= 17, arr.ind = T)
+ok
+T[ok]
+```
+
+<br>
+
+## Data Frame
+### Index
+<li>We use <blue>sleep</blue> data to illustrate how to subset a data frame, which is similar to array.</li>
+
+```{r echo=TRUE}
+data(sleep)
+names(sleep)
+sleep[1:3, ]
+sleep[, "extra"]
+```
+
+### %in%
+<li>If there is a column of id in the data frame, we can use $\%\textrm{in}\%$ to subset data.</li>
+```{r echo=TRUE}
+head(sleep)
+sleep[sleep$ID %in% c(1,2,3), ] #select by ID
+sleep[sleep$ID %in% c(1,2,3) & sleep$group %in% c(1), ] # two conditions
+```
+
+<li>$\%\textrm{in}\%$ means "belong to." For example, human can sense pitch that ranges from 20Hz to 20000Hz. If a pitch is above 20KHz, we call  "ultra sound." If it is below 20Hz, we call it "infrasound." We can check how many elements in one vector is subset of the other one：</li>
+```{r echo=TRUE}
+A<-c(4000: 6000); B<-c(3000:5000); C <- c(3000:10000)
+table(A%in%B)
+table(A%in%B%in%C)
+```
+
+
+
+### which()
+<li><fr>which()</fr>can include more than one conditions connected by "&" (and) or "|" (or). As data frame as concerned, we can find out each row that matches our conditions . Therefore, we can subset our data frame based on multiple conditions.</li>
+
+```{r include=TRUE}
+cond <- which(sleep$extra>0.5 & sleep$group==1)
+sleep[cond, ]
+```
+
+<li>$\%\textrm{in}\%$ and <fr>which() </fr> can return the same results:</li>
+
+```{r echo=T}
+mtcars[mtcars$cyl %in% c(4) & mtcars$hp %in% c(90: max(mtcars$hp)), c(1:6)]
+mtcars[which(mtcars$cyl==4 & mtcars$hp > 90) , c(1:6)]
+```
+
+
+<br>
+
+# Conditional Element Selection
+## ifelse()
+<li>When we want to keep some elements according to a test or condition, we can use <fr>ifesle</fr>. </li>
+<li>Suppose there are four people living in a household and the interviewer has to filter out people under 18 years old. Our codes can be written like this:</li>
+```{r echo=TRUE}
+x=c(20, 50, 16, 78)
+interview<-ifelse(x>=18, "Yes", "No")
+print(interview)
+```
+  
+<li>In essense, <fr>ifesle</fr> can recode the numeric variable. </li>
+```{r echo=TRUE}
+survey <- c()
+survey[x>=18]<-"Yes"
+survey[x<18]<-"No"
+survey
+interview
+```
+
+$\blacksquare$ Suppose we want to decide if these dates, Jan. 1st, Feb. 1st, Nov. 1st, and Dec. 20., are before or after July 12, 2018. Apply <fr>difftime()</fr> and <fr>ifelse()</fr> to transformation. 
+```{r include=FALSE}
+S<-c("2018-01-01", "2018-02-01", "2018-11-01", "2018-12-01")
+S <- as.Date(S, format='%Y-%m-%d')
+day<-as.Date("2018/07/12", format='%Y/%m/%d')
+new.S<-ifelse(difftime(day, S)>=0, "Earlier", "Later")
+new.S
+```
+
+
+## if-else 
+<li> <fr>if-else </fr> can return a vector when another vector passes a test. The following example shows that we can test if temperature is over 28.</li> 
+```{r echo=TRUE}
+temperature<-30 
+if (temperature>28){
+   cat ("Turn on air condition")
+}else {
+  cat ("Turn off air condition")
+}
+```
+
+<li>We can also run certain calculation if the vector meets certain condition.</li>
+```{r echo=TRUE}
+scores<-c(30, 50, 90, 20) 
+if (scores< 36){
+     sqrt(scores)*10
+}else {
+    scores
+}
+```
+
+<li><fr>if-else</fr> will take actions according to the first element of the vector, so it cannot deal with more than one elements. It takes a loop to test more than one elements.</li>
+```{r echo=TRUE}
+score<-c(30) 
+if (score< 36){
+     sqrt(score)*10
+}else {
+    score
+}
+```
+## if-else if-else
+<li><fr>if-else if-else</fr> allows more than one conditions for testing the element in a vector. For example, if a movie over 180 minutes is called "too long," if it is under 165 minutes is "short." If it is in-between, we call it "long."</li>
+```{r echo=TRUE}
+movie<-170 
+if(movie>=180){
+     cat('Very long')
+    } else if(movie>=165) {
+    cat('Long')
+  } else {
+          cat('Short')
+      }
+```
+
+
+<li>Example: Assume that a hotel gives 15% discount if we book a room 90 days before check-in, 10% discount if we book a room 60 days in advance, and within 1 week 20% up from the original price. If you plan to check in on Jul. 30th and the list price is 3,000 NT dollars. How much do you have to pay if you book your room today and two weeks from now? </li>
+```{r}
+price=3000
+booking<-as.Date(Sys.Date(), format='%Y-%m-%d')
+booking
+
+checkin<-as.Date(c("2018-07-30"), format='%Y-%m-%d')
+
+if (difftime(checkin, booking)>90){
+    print (price*0.85)
+}else if (difftime(checkin, booking)>=60){
+   print (price*0.9)
+}else if (difftime(checkin, booking)>=7){
+   print (price)
+}else{
+  print (price*1.2)
+}
+
+ booking2 <-booking + 14
+if (difftime(checkin, booking2)>90){
+    print (price*0.85)
+}else if (difftime(checkin, booking2)>=60){
+   print (price*0.9)
+}else if (difftime(checkin, booking2)>=7){
+   print (price)
+}else{
+  print (price*1.2)
+}
+
+```
+
+---
+
+# Loop
+<li>There are for, while, break, and next loops.</li>
+
+## for
+<li>We can repeat an action $n$ times with <fr>for loop</fr>  
+
+```{r echo=TRUE}
+for (U in 1:5){
+  cat("All work and no play","\n")
+}
+a <-c(1:5)
+for (i in a) { cat ("Busy", " ")
+  }
+```
+<li>In the first loop, $U$ is a variable that `R` will execute the code in the bracket from the starting value to the end.</li>
+<li>In the second loop, we can generate a vector, then writing a loop that will execute the code as many times as the elements in the vector that we specify. </li>
+<li>The variable in the *for* can be shown in the result by pasting it.</li>
+```{r echo=TRUE}
+for (i in 1:4){
+  cat("Hello World", paste(i), "times \n")
+}
+```
+<li>We can add 1 to 10 in a loop. Notice that we have to set up a variable equals to zero.</li>
+```{r echo=TRUE}
+sum<-0
+for (i in 1:10){
+  sum = sum + i
+  }
+print(sum)
+```
+
+### Generating random numbers
+<li>To show a distribution of a random varaible through an experiment, we can toss three fair six-point dices many times and add the sum of each toss together. The summation should follow the shape of a normal distribution.</li> 
+
+```{r echo=TRUE}
+set.seed(11605)
+dice <- seq(1:6)
+x <- c()
+for (i in 1:1000){
+  x[i]<-sum(sample(dice, 1), sample(dice, 1), sample(dice, 1)) 
+}
+# graphic
+df<-data.frame(Dice=x)
+library(ggplot2)
+g <- ggplot(aes(Dice), data=df) + 
+  geom_histogram(binwidth = 0.9, fill='lightgreen', aes(y=..density..), position="identity") +
+  labs(x="Sum of Three Dices", y="Density")
+g
+```
+
+<li>We use index to record the result of each experiment and save it in a vector for further analysis. </li>
+
+
+### for and function
+<li>We can combine for loop and function. Given certain condictions, we can execute or skip certain codes. </li>
+<li>For example, we draw three cards from a stack of cards from 1 to 13. Suppose we sum up the first two cards and decide if we should draw the third card. If the sum of the first two cards are smaller than 16, we have to draw the third one. Otherwise we just show the sum of the first two cards. We can manipulate the random seed to test our function.</li>
+
+```{r echo=TRUE}
+set.seed(02138)
+card<-function(x) {
+set.seed(x)
+for (i in 1:3)
+  x[i]<-sample(1:13, 1)
+  if (x[1]+x[2]<16 ){
+  print(x[1:3])
+  cat(sum(x[1:3]),"is sum of three cards \n")
+    } else {
+        print(x[1:2])
+        cat(sum(x[1:2]), "is sum of the first 2 cards \n")
+        }
+  }
+card(100); card(1001); card(11605)
+```
+<li>We can designate 'cards' to the function and the parameter is the random seed number. </li>
+
+### for and if-else if-else
+<li>We can build a function by applying <fr>for</fr> and <fr>if-else if-else</fr> to the booking exercise above if we have more than one dates. </li>
+
+```{r}
+today<-as.Date(Sys.Date(), format='%Y-%m-%d')
+
+hotel <- function(checkin){
+      n <- length(checkin)
+      price <- 3000
+diff <- difftime(checkin, today)  
+
+for (i in 1:n)
+    if (diff[i]>90){
+          print(checkin[i])
+             cat (round(diff[i]/30,1), "months:", price*0.85, "\n")
+      }else if (diff[i]>=60){
+              print(checkin[i])
+              cat (round(diff[i]/30,1), "months:",price*0.9,"\n")
+    }else if (diff[i]>=30){
+            print(checkin[i])
+            cat (round(diff[i]/30,1), "months:",price,"\n")
+    }else{
+            print(checkin[i])
+            cat (diff[i],  "days:",price*1.2, "\n")
+    }
+ }
+checkin<-as.Date(c("2018-12-31", "2018-11-20","2018-09-20"),    format='%Y-%m-%d')
+checkin<-c(checkin, today+7)
+hotel(checkin)
+```
+
+
+
+### Double Loops
+<li>Double loops allow us to set up two variables in a function at the same time. For example, we can generate a 2020 multiplication table with double loops.</li>
+```{r echo=TRUE}
+multiplication <- matrix(nrow=10, ncol=10)
+for (i in 1:dim(multiplication)[1]){
+  for (j in 1:dim(multiplication)[2]){
+    multiplication[i,j] <- (i+10)*(j+10)
+  }
+}
+rownames(multiplication)<-c(11:20)
+colnames(multiplication)<-c(11:20)
+multiplication
+```
+
+
+
+### Data clean
+<li><fr>for loop</fr> can help us read and clean data. For example, we want to read data of 23 cities. It has several variables, such as the percentage of elder people.</li>
+```{r echo=TRUE}
+library(foreign)
+stat.dat<-read.csv("CS3171D1A.csv",header=TRUE,sep=";",dec=".",fileEncoding="BIG5")
+stat.dat[1:11,]
+```
+
+<li> There is a variable name on the second column and second row. So how do we correctly read the data not in right format? </li>
+
+- We create a data frame that has only one column, the names of 23 cities.   
+- We create a data frame that has 23 rows and 10 columns     
+- Then we run a loop 23 times     
+- Notice that the first element comes from the second column and  second row.     
+
+```{r echo=TRUE}
+dt <- data.frame(city=colnames(stat.dat)[-1])
+old<-data.frame()  
+ for (u in 1:23){
+   for (i in 1:11)
+   old[u, i]<-stat.dat[i+1, u+1]
+ }
+dt <-data.frame(dt, old)
+colnames(dt)<-c("city", c(2000:2010))
+head(dt)
+```
+<li>We can melt the data and make a multiple line chart.</li>
+```{r}
+library(reshape2)
+DT <-melt(dt, id.vars='city', variable.name='years')
+DT$years <- as.Date(DT$years, format="%Y")
+library(ggplot2)
+ggplot(DT, aes(x=years, y=value, col=city)) +
+      geom_line(size=1) +
+     geom_point(shape=16, size=3) +
+   labs(x="Years", y="Percent") +
+   scale_x_date(date_labels = "%Y") +
+    theme(text=element_text(family='STFangsong')) 
+```
+<br>
+
+## while
+<li><fr>while loop</fr>allows us to leave the loop when certain conditions are met. For example, we want to stop the loop of calculation if $2^{x}$ is greater than 1000.</li>
+```{r echo=TRUE}
+power<--1
+while (power <= 12) {
+      power <- power +1
+    if (2^power<1000){
+    cat(2^power, "\n")
+    }else{
+        cat("Stop")
+    }
+}
+```
+
+<li><fr>for loop </fr> can only return $2^{0}, \ldots, 2^{12}$.</li>
+```{r echo=TRUE}
+ for (a in -1:11){
+    a <- a +1
+   print(2^a)
+ }
+```
+
+## break
+<li><fr>break loop </fr> can literally stop the loop. </li>
+```{r echo=TRUE}
+power<-0
+while (power <= 12) {
+  if (2^power<1000){
+    cat(2^power, "\n")
+    }else{
+        cat("Stop")
+        break
+    }
+  power <- power +1
+}
+```
+
+<li>We apply this technique to the booking system. For example, if we book the room within 30 days and the price is over our budget, the loop will stop.</li>
+```{r echo=T}
+today<-as.Date(Sys.Date(), format='%Y-%m-%d')
+
+hotel <- function(checkin){
+n <- length(checkin)
+price <- 3000
+diff <- difftime(checkin, today)  
+for (i in 1:n)
+    if (diff[i]>90){
+          print(checkin[i])
+             cat (round(diff[i]/30,1), "months:", price*0.85, "\n")
+      }else if (diff[i]>=60){
+              print(checkin[i])
+              cat (round(diff[i]/30,1), "months:",price*0.9,"\n")
+    }else if (diff[i]>=30){
+            print(checkin[i])
+            cat (round(diff[i]/30,1), "months:",price,"\n")
+            
+    }else{
+            print(checkin[i])
+            cat("Over the budget")
+            break
+    }
+ }
+checkin<-as.Date(c("2018-10-31", "2018-08-10","2018-07-20"), format='%Y-%m-%d')
+checkin<-c(checkin, today+3)
+hotel(checkin)
+```
+
+
+## next
+<li>Finally, we can use <fr>next</fr> to skip some codes when certain conditions are met. </li>
+```{r echo=TRUE}
+for (i in 1:8){
+     if (i == 4){
+       next
+     }
+  if (i == 6){
+       next
+     }
+    cat(i, "power of 5 is", 5^i, "\n")
+ }
+ 
+```
+
+---
+
+# Assignments
+- 1. Please find out the number of letters of state names longer than 13, and point out their poisitions in an array. <fr>nchar()</fr> can return the length of word.
+```{r include=FALSE}
+y <- array(state.name, dim=c(5,10))
+which(nchar(y)>=13, arr.ind = T)
+```
+
+- 2. Please read studentsfull.txt and get the data of students from Economic and Chemistry.
+```{r include=FALSE}
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/eastasia")
+df<-read.csv("studentsfull.txt", header=TRUE, sep="")
+cond <- which(df$Department=="Chemistry" | df$Department=="Economics")
+df[cond, ]
+```
+
+- 3. After an exam, the instructer decides to take the square root of scores smaller than 60 and multiply it by 10. For example, 36 will be changed to 60. Please write a function to convert the following scores: 34, 81, 55, 69, 77, 40, 49, 26.
+```{r include=FALSE}
+score<-c(34, 81, 55, 69, 77, 40, 49, 26)
+ f<-function(x){
+  makeup<-ifelse(x<60, sqrt(x)*10, x)
+  return(data.frame(original=x, final=round(makeup, 2), row.names=NULL))
+ }
+ 
+f(score)
+```
+
+- 4. Please write a function to convert the difference between two dates to month. You can make an example of today and July 31, 2020.
+
+```{r include=FALSE}
+elapsed_months <- function(end_date, start_date) {
+    Next.m<-format(end_date, '%m')
+    Next.y<-format(end_date, '%Y')
+    Start.m<-format(start_date, '%m')
+    Start.y<-format(start_date, '%Y')
+    12 * (as.numeric(Next.y) - as.numeric(Start.y)) + (as.numeric(Next.m) - as.numeric(Start.m))
+}
+elapsed_months(as.Date("2020-07-31"), Sys.Date())
+```
+
+- 5. Please try to get "unemployment rate" and combine it with the percentage of elder people in 2000.
+```{r include=FALSE}
+stat.dat<-read.csv("CS3171D1A.csv",header=TRUE,sep=";",dec=".",fileEncoding="BIG5")
+unemploy.2000<-rep(NA, 23)  
+ for (u in 1:23){
+   unemploy.2000[u]<-stat.dat[14,u+1]
+ }
+
+old.2000<-c()
+ for (u in 1:23){
+   old.2000[u]<-stat.dat[2,u+1]
+ }
+city<-names(stat.dat)[-1]
+data.frame(old.2000, unemploy.2000, row.names = city)
+```

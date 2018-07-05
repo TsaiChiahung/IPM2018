@@ -1,0 +1,669 @@
+---
+title: "Introducing R"
+subtitle: "Data Type, Data Structure and Operation (v2.0)"
+author: "Chia-hung Tsai (Election Study Center, NCCU)"
+date: 'Wednesday, July 11, 2018, 5:10-6:30 p.m.'
+output: 
+  html_document: 
+    toc: true # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+    fig_caption: true
+    #pandoc_args: ["-F","pandoc-crossref"]
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+<style>
+body {
+    background-color: #EEE8AA;
+    font-size: 22px;
+    color: #171717;
+    font-family: Times, "BiauKai", sans-serif;
+    line-height: 1.8;
+}
+blue {font-family: courier, lucida;  
+      color: blue}
+fr  {font-family: georgia; 
+      color: firebrick}
+</style>
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+library(dplyr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, digits = 3)
+options(knitr.table.format = "html", digits = 3)
+```
+
+# Goal of this course
+We will introduce the data type and data structure of `R`. For example, we use `c()` to denote a set of numbers and strings.
+```{r echo=TRUE}
+A<-c("Taipei City","New Taipei City", "Taoyuan City", "Taichung City","Tainan City","Kaohsiung City")
+print(A)
+B<-c(0,1,2,3,4,5,6,7,8,9)
+print(B)
+```
+
+
+---
+
+# Overview
+
+- One dimension
+    - vector
+    - factor
+- Two dimensions
+    - matrix
+    - data frame
+- Multiple dimensions
+    - array
+    - list  
+    - table
+
+<hr>
+# What is `R`?
+`R` is a free software for data analysis and statistical computing. It can be download from [here](https://cran.r-project.org). It has a base package and allows users to download packages from a specific repository or the "Comprehensive R Archive Network" (CRAN).  
+Please make sure that you download the right version compatible with your system.     
+`RStudio` is an IDE that expands the functions of `R`. For example, you can embed `R` codes in a html or $\LaTeX$ document. You can also import different kinds of datasets easily. Notice that it cannot run without `R`.    
+
+# Data Type
+## numeric
+Numeric data can be numeric or integer. For example:
+
+```{r echo=TRUE}
+x<-c(2, 4, 6, 8); x
+class(x)
+```
+
+The function <fr>class()</fr> returns the data type.
+
+We can also use scientific notations to present the numeric data:
+
+```{r echo=TRUE}
+y=c(1.1e+06); y
+class(y)
+```
+
+
+Integer is a subset of numbers. In a 32-bit operation system, the maximum integer is 2147483647，far smaller than the maximum of number. Every number is composed of significan ($+\-$), mantissa and exponent to be computed, in particular the number with a decimal. For example:
+```{r echo=TRUE}
+u<-as.integer(c(4)); class(u)
+```
+
+Another example:   
+```{r}
+a=1.356e+3
+is.numeric(a)
+is.integer(a)
+options(digits=20)
+pi
+is.numeric(pi); is.integer(pi)
+```
+
+Integer can be added, substracted, multiplied, and divided like number.
+
+```{r}
+J<-c(3, 6, 33)
+J<-as.integer(J)
+J-1; J*2; J/3
+```
+
+## character
+
+Charaters are easy to understand, espcially for data visualization. For example: 
+```{r echo=TRUE}
+library(lattice)
+s77<-data.frame(state.x77)
+s77<-s77[order(s77$Population,decreasing=T),]
+dotchart(s77$Population,
+labels=row.names(s77), pch=16,cex=.7, xlab='Population')
+```
+
+Here we transform the matrix **state.x77** to be a data frame, and then we draw a <fr>dotchart</fr>, a function from `lattice` package.  
+
+numbers can be treated as characters:
+```{r echo=TRUE}
+char1<-c("1","2", "Do", "Re", "Mi"); char1
+```
+
+Can we convert characters to numbers? No. But we can convert it to factor, then converting it to numbers.
+```{r}
+LETTERS
+LETTERS.f <- as.factor(LETTERS)
+as.numeric(LETTERS.f)
+```
+
+Please read the **councilor** data. Notice that we can encode the data if it is not UTF-8.
+
+```{r}
+library(foreign)
+df <- read.csv('councilor.csv', header=T, fileEncoding = 'BIG5', 
+               colClasses = "character")
+df
+as.numeric(df$unit)
+```
+
+To make the conversion easier, we change the arguments <blue>colClasses="factor"</blue> in the <fr>read.csv()</fr> funcation.
+```{r}
+library(foreign)
+df <- read.csv('councilor.csv', header=T, fileEncoding = 'BIG5', 
+               colClasses = "factor")
+df
+as.numeric(df$unit)
+```
+
+## logic
+
+<li>Data can be logic as True or False. We use it to filter data. For example, let's create a logic variable **ok**: </li>
+```{r echo=TRUE}
+s77$ok<-s77$Income>5000; s77$ok
+```
+
+<li>We can select cases of a data frame according to this variable:</li>
+
+```{r echo=TRUE}
+options(digits=3)
+s77[s77$ok, ]
+```
+
+Please try to run the following codes:    
+
+```markdown
+library(car)
+head(Duncan)
+income.hi<-Duncan$income>70  
+Duncan[income.hi, ]
+```
+How many "bc" are left in your dataset?
+
+## date
+
+<li>Date is a special type of data. First of all, we can show what date is today. </li>
+```markdown
+Sys.Date()
+```
+<li>If we have a vector of characters, we can tranform it to date according to the original format. We can transform it to other date format.</li>
+
+```{r echo=TRUE}
+v<-c("2/27/2018", "6/26/2018", "12/31/2018"); class(v)
+v.date<-as.Date(v, format='%m/%d/%Y'); class(v.date)
+v.date
+v.date <-format(v.date, "%b. %d, %Y"); v.date
+```
+
+Or
+```{r echo=TRUE}
+v<-c("", "6/26/2018", "12/31/2018")
+as.Date(v, format='%m/%d/%Y')
+```
+<li>We can also know certain dates after certain days pass from the origin date. </li>
+```{r echo=T}
+S <- c(50, 100)
+as.Date(S, origin="2018-01-01")
+```
+
+<li>So what is the strength of date? Can we stick with character or numeric? It depends. </li>
+<li>For example, we create the following dataset with <fr>tibble()</fr>:</li>
+```{r}
+library(dplyr)
+df <- tibble(date=c("2016", "2017", "2018"),
+                    students=c(20, 22, 18),
+                    teachers=c(12, 13, 20))
+df
+```
+<li>Then let's draw a multiple-line chart to visualize the trends of students and teachers. In order to do so, we use <fr>melt()</fr> to create a long table according to the index variable, **date**. </li>
+
+```{r}
+library(reshape2); library(ggplot2)
+df2 <- melt(df, id.vars="date", variable.name="Group")
+df2$Group <-as.factor(df2$Group)
+df2
+ggplot(df2, aes(x=date, y=value, col=Group)) + 
+     geom_line( size=1) +
+     geom_point(shape=6, size=3)           
+```
+
+<li>The figure looks okay, but there are no lines connecting the dots. Let's convert the type of "date" to date type.</li>
+
+```{r}
+library(reshape2); library(ggplot2)
+df2 <- melt(df, id.vars="date", variable.name="Group")
+df2$Group <-as.factor(df2$Group)
+df2$date <- as.Date(df2$date, format="%Y")
+df2
+ggplot(df2, aes(x=date, y=value, col=Group)) + 
+     geom_line( size=1) +
+     geom_point(shape=16, size=3)           
+```
+
+<li>We can try another dataset as follows.</li>
+```{r}
+library(dplyr)
+df <- tibble(date=c("2018/07/11", "2018/07/12", "2018/07/13"),
+                    students=c(20, 22, 18),
+                    teachers=c(2, 3, 4))
+df             
+library(reshape2); library(ggplot2)
+df2 <- melt(df, id.vars="date", variable.name="Group")
+df2$Group <-as.factor(df2$Group)
+df2$date <- as.Date(df2$date, format="%Y/%m/%d")
+df2
+ggplot(df2, aes(x=date, y=value, col=Group)) + 
+     geom_line( size=1) +
+     geom_point(shape=16, size=3) +
+     scale_x_date(date_labels = "%Y/%m/%d")
+```
+
+<li>Here we use <fr>scale_x_date(date_labels = "%Y/%m/%d")</fr> to specify the date format of x-axis.</li>
+### Difference in date
+
+<li>We can calculate the difference between two dates. For example, we want to know the difference of Xi and Tsai's age: </li>
+```{r echo=T}
+xi<-"1953-06-15" #Xi's birthday
+tsai<-"1956-08-31" #Tsai's birthday
+```
+
+<li>We use <fr>difftime()</fr> to calculate the difference:</li>
+```{r echo=T}
+as.Date(c(xi,tsai))
+difftime(tsai, xi)
+```
+
+
+### Formats of Date
+
+<li>Here are some formats of date: </li>
+
+|symbol|meaing|example|
+|--------|----|----|
+|%d| date as number|01-31 |
+|%a| abbreviated weekday|Mon |
+|%A| unabbreviated weekday| Monday|
+|%m| month as number|01-12 |
+|%b| abbreviate month| Jan |
+|%B| unabbreviate month|January |
+|%y| 2-digit year| 18 |
+|%Y| 4-digit year| 2018 |
+
+<li><fr>format()</fr> can transform date to other formats. </li>
+```{r echo=TRUE}
+Today<-Sys.Date(); Today
+to_day<-format(Today, format='%Y-%b-%d'); to_day
+to_day<-format(Today, format='%m %d (%a), %y'); to_day
+```
+
+---
+
+# Data structure
+## one-dimension
+### vector  
+
+<li>Vector is the most often used data structure. </li>
+```{r echo=TRUE}
+example<-c(0,1,2,3,4)
+print(example)
+```
+
+<li>We can reverse the arrow.</li>
+
+```{r echo=TRUE}
+c(2,4,6,8)->A
+```
+
+<li>There are upper case and lower case of English letters.</li>
+```{r echo=TRUE}
+c(letters)
+c(LETTERS)
+```
+
+<li>We can directly do arithmetic within a vector. </li>
+```{r echo=TRUE}
+j<-c(2*2,2*9, 10-2, sqrt(25)); j
+```
+
+<li>We can multiply, divide, add, or substract a vector by certain number.</li>
+```{r echo=TRUE}
+R<-c(30, 40, 50); A <- R/5; A; A^2 
+```
+### Attribute
+<li>We can use <fr>attr()</fr> function to store metadata about the object. Attributes can be thought of as a named list (with unique names). Attributes can be accessed with attr() or all at once (as a list) with attributes().</li>
+```{r}
+
+attr(mtcars$wt, "myattribute") <-"Weights"
+attr(mtcars$wt, "mylabel") <-"Weights of Cars"
+attr(mtcars$wt, "myattribute")
+attr(mtcars$wt, "mylabel")
+attributes(mtcars$wt)
+
+```
+
+<li>We can give names to elements in a vector.</li>
+```{r}
+U <- c(60, 70, 75, 82)
+attr(U, "myattribute")<-"humanity"
+names(U) <-c("Taichung", "Chiayi", "Tainan", "Kaohsiung")
+U
+barchart(U)
+```
+
+
+<li>We can combine vectors with vectors.</li>
+```{r}
+RA <- c(R, A)
+RA
+```
+
+<li>If two vectors are of unequal length, the shorter one will be recycled in order to match the longer vector. </li>
+```{r}
+M1 <- c(1:3); M1
+M2 <- rep(10, 4); M2
+M1 + M2
+```
+
+### factor
+Data can have categories, which look like characters.
+```{r echo=TRUE}
+library(ggplot2)
+class(diamonds$cut)
+table(diamonds$cut)
+```
+
+<li>In this example, **cut** is an ordered factor. We can try to do it on our own. </li>
+
+```{r}
+H<-c("Hi", "Lo", "Lo", "Middle", "Middle", "Middle")
+table(H)
+
+H.o <- ordered(H, levels=c("Lo", "middle", "Hi"))
+table(H.o)
+```
+
+<li>Factor is useful because it has characters that we can read in tabulation.</li>
+```{r echo=TRUE}
+table(diamonds$cut, diamonds$color)
+```
+
+<li>It is also useful when we vizualize our data.</li>
+```{r echo=TRUE}
+library(car)
+library(lattice)
+plot( Chile$vote ~ Chile$sex, xlab="Sex", ylab="Vote")
+```
+
+#### Conversion of factor to numeric
+<li>We can convert factor to numeric data.</li>
+```{r echo=TRUE}
+library(car)
+data(Chile)
+class(Chile$region)
+table(Chile$region)
+y<-as.numeric(Chile$region)
+table(y)
+```
+
+<li>We can also create a numeric variable and replace factor into numeric.</li>
+```{r echo=T}
+Chile$gender[Chile$sex=="F"]<-1
+Chile$gender[Chile$sex=="M"]<-2
+table(Chile$gender)
+table(Chile$sex)
+```
+
+<li>Please try to convert the **cut** variable from factor to numeric. </li>
+
+
+## Two-dimension
+### matrix
+
+<li>We can create a matrix to represent two dimensions of data. For example, we can create a $3\times 3$ matrix like that:</li>
+```{r echo=TRUE}
+m<-matrix(c(1:9), nrow=3, ncol=3); m
+
+n<-matrix(c(1:6), nrow=3, ncol=2); n
+
+```
+<li>We can multiply the two matrixes if the number of columns of the first matrixt equals to the number of row of the second matrix:</li>
+```{r echo=TRUE}
+m%*%n
+```
+
+<li>We can obtain the diagnol of matrix with <fr>diag()</fr> function:</li>
+```{r echo=T}
+diag(m)
+diag(n)
+```
+
+<li>Sometimes we need to transpose the matrix: </li>
+```{r echo=T}
+t(m)
+```
+
+<li>We can replace one of the elements in a matrix with other numbers or strings by specifing the two dimensions:
+```{r echo=T}
+m
+m1<-m
+m1[2,3]<-0
+m1[3,]<-99
+m1
+```
+
+<li>We can set up different dimensions of a same matrix: </li>
+```{r}
+a <- matrix(c(1:20), nrow=2, ncol=10)
+b <- matrix(c(1:20), nrow=5, ncol=4)
+a; b
+
+```
+
+### data frame
+<li>Data frame is like matrix. It can combines vectors and assign names to each of them.</li>
+```{r echo=TRUE}
+options(digits=4)
+R1<-c(170, 175, 166, 172, 165, 157, 167, 167, 
+        156, 160)
+R2<-c("F","M","M","M","F","F","F","F","M","F")
+R3<-R1/10 + 42
+
+R123<-data.frame(height=R1,gender=R2,weight=R3); R123
+```
+<li>It is shown that **gender** is a factor. We can ask `R` not to convert it.</li>
+```{r}
+class(R123$gender)
+R123<-data.frame(height=R1,gender=R2,weight=R3, stringsAsFactors = F)
+str(R123)
+```
+
+<li>Each column must have same numbers of elements, and each row must have the same number of columns.</li>
+
+
+-  <fr>nrow()</fr>：number of rows   
+-  <fr>ncol()</fr>：number of columns  
+-  <fr>dim()</fr>：number of rows and columns     
+-  <fr>head()</fr>：the first six rows  
+- <fr>str()</fr>: information of all variables  
+
+<li>If we want to know the number of observations in <blue>AMSsurvey</li>：</li>
+```{r echo=TRUE}
+library(car)
+nrow(AMSsurvey)
+```
+
+<li>If we want to change the names of variables of a data frame, we can use <fr>colnames()</fr> function:</li>
+```{r echo=T}
+newsurvey <- AMSsurvey
+colnames(newsurvey)<-c("v1","v2","v3", "v4", "v5"); head(newsurvey)
+```
+
+<hr>
+
+## Multi-dimension
+### array
+<li>Array can contain more than one matrix. An one-matrixt array is a matrix.</li>
+```{r echo=TRUE}
+Array1 <- array(1:12, dim = c(2, 6, 1)); Array1
+```
+
+<li>We can create an array that contains two $2\times 4$ matries</li>
+```{r echo=TRUE}
+Array2 <- array(16:1, dim = c(2, 4, 2)); Array2
+```
+
+<li>We can subset the array by specifying the one of the three dimesnions:</li>
+```{r echo=TRUE}
+A12<-Array2[,,2]; A12
+A111 <- Array2[1, 1, 1]; A111
+```
+
+### list
+<li>If we have vectors of unequal length, we can use list to store the data.</li>
+```{r echo=T}
+options(digits=4)
+birthday <- c("1981/03/15", "1983/04/20", "1984/01/18")
+listA<-list(R123, m, birthday); listA
+listA[[3]]
+```
+
+<li>To organize the list, we can assign names to vectors, arrays, or matrix respectively. </li>
+```{r echo=TRUE}
+options(digits=4)
+listB<-list(data=R123, vec=m, char=birthday); 
+listB[["data"]]
+
+```
+
+```markdown
+Please combine `c('a','b','c')`、`c(1,2,3,4)`以及`c('2018-01-01', '2018-04-04', '2018-04-05', '2018-06-18', '2018-10-10')` as a list.  
+```
+### table
+<blue>Titanic</blue> is a table. It contains four arrays.
+```{r echo=TRUE}
+class(Titanic); Titanic
+
+Titanic[, , 1, 1]
+```
+
+<li>We can use <fr>prop.table()</fr> to know the conditional probability of a table and <fr>margin.table()</fr> can return the marginal probability. </li>
+```{r echo=T}
+options(digits=4)
+g<-Titanic[ , , 2, 2]; g
+prop.table(g, 1)
+prop.table(g, 2)
+margin.table(g,1)
+margin.table(g,2)
+```
+<br>
+
+# Basic Operation   
+## Operation of Vector   
+<li>Because vector can represent the coordinates, so the order of elements is important, especially when we do arithmetic of two vectors.</li>
+<li>First of all, we do arithmetic between a vector and a scalar.</li>
+```{r echo=T}
+X<-c(10,20,30,40,50,60); Sca<-10
+X+Sca
+X/Sca
+```
+
+
+<li>Then we try the operation of two vectors:</li>
+```{r echo=T}
+Y<-c(5,10,6,8,25,6)
+X/Y; X*Y
+```
+
+## Mathmatical functions 
+Please see more details [here](http://www.dummies.com/programming/r/how-to-use-mathematical-functions-in-r/)     
+
+- sqrt(x): square root    
+- exp(x): exponential of x    
+- log(x, y): natural logarithm of x if y is not specified    
+```{r}
+a=6
+exp(a); log(a)
+log(exp(a)); exp(log(a))
+```
+- factorial(x): factorial of x. For example   
+```{r}
+1*2*3
+factorial(3)
+```
+- abs(x): absolute value of x
+
+## Rounding of numbers
+Please see more details [here](https://stat.ethz.ch/R-manual/R-devel/library/base/html/Round.html)      
+
+- `round`：rounds the values in its first argument to the specified number of decimal places 
+- `floor`：takes a single numeric argument x and returns a numeric vector containing the largest integers not greater than the corresponding elements of x.
+- `ceiling`： takes a single numeric argument x and returns a numeric vector containing the smallest integers not less than the corresponding elements of x    
+
+```{r echo=TRUE}
+a1<-c(2.54, 3.111, 10.999)
+round(a1, digits=2)
+floor(a1)
+ceiling(a1)
+```
+
+---
+
+# Exercises
+
+1. $\text{log}(\frac{14}{5})=$?  
+```{r include=F}
+log(14)-log(5)
+```
+2. $1\times 2\times 3\times , \dots ,\times 8=$?
+```{r include=F}
+factorial(8)
+```
+3. About **Titanic** data, please show which coach that the survived children were taking.
+```{r include=F}
+options(digits=4)
+t<-Titanic[ , , 1, 2]; t
+margin.table(t, 1)
+
+```
+4. Please use <fr>weekdays()</fr> function to show what day it is today.
+```{r include=FALSE}
+TODAY<-as.Date('2018-07-11', format='%Y-%m-%d')
+weekdays(TODAY)
+```
+
+5. How many observations that has **mpg** greater or equal to 21 in `mtcars`？
+```{r include=FALSE }
+library(car)
+knitr::kable(mtcars)
+mtcars$Mpg<-mtcars$mpg
+ok<-mtcars$Mpg>=21
+mtcars$Mpg[ok==T]<-'hi'
+mtcars$Mpg[ok==F]<-'lo'
+table(mtcars$Mpg)
+```
+
+6. Please analyze if admission is related to gender in A department in <blue>UCBAdmissions</blue>. 
+```{r include=FALSE, echo=F}
+A <- UCBAdmissions[, , 1]; A
+prop.table(A, 2)
+#conclusion: not strongly related.
+```
+7. Please count the number of letters in English. 
+```{r include=FALSE}
+n<-length(c(LETTERS)); n
+```
+8. Please transform today's temperature to Fahrenheit.
+```{r include=FALSE}
+a<-28
+F.a<-a*(9/5)+32; F.a
+```
+
+9. Please create a matrix with a diagnol (1,1,1)
+```{r include=FALSE}
+a<-matrix(c(1:9), nrow=3, ncol=3)
+diag(a)<-c(1,1,1); a
+```
+10. Please count the number of days between when you are doing assignment and Jan. 1st.
+```{r include=FALSE}
+a<-Sys.Date(); b<-as.Date("2018-01-01")
+difftime(a, b, units=c("days"))
+```

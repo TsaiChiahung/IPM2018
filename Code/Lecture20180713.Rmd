@@ -1,0 +1,393 @@
+---
+title: "Introducing R"
+subtitle: "Descriptive Analysis, Regression, Visualization (v1.0)"
+author: "Chia-hung Tsai (Election Study Center, NCCU)"
+job: "東亞所"
+date: 'Fridday, July 13, 2018, 5:10-6:30 p.m.'
+output: 
+  html_document:
+    toc: TRUE # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+    fig_caption: true
+    #pandoc_args: ["-F","pandoc-crossref"]
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+<style>
+body {
+    background-color: #EEE8AA;
+    font-size: 22px;
+    color: #171717;
+    font-family:  Times, "王漢宗細圓體繁", "新細明體", "BiauKai", sans-serif; cursive;
+    line-height: 2;
+}
+blue {font-family: georgia; 
+      color: blue}
+fr  {font-family: georgia; 
+      color: firebrick}
+</style>
+
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, digits = 3)
+options(knitr.table.format = "html", digits = 3)
+```
+
+# Goal
+<li>This course will depart from descriptive analysis and visualization. Moreover, it will show how to do ordinary linear regression and logistic regression. For example, we can visualize the relationship between two variables like this:</li>
+
+```{r echo=TRUE}
+library(ggplot2)
+ggplot(mtcars, aes(x=wt, y=mpg)) +
+    geom_point() +
+    geom_smooth(method='lm', se=T)
+```
+
+
+---
+
+# Descriptive Statistics
+
+<li>We can decribe our data in terms of central tendency and dispersion. </li>
+
+## Mean and Standard Deviation
+<li>Mean and standard deviation represent the central tendency and disperson of a random variable respectively..</li>
+<li>We can use `stargazer` to report the mean, standard deviation, minimum, and maximum values.</li>
+
+```markdown
+library(stargazer)
+dss <- as.data.frame(diamonds)
+dss <- dss[, c(1,5,7)]
+stargazer(dss, type="html")
+```
+
+<table style="text-align:center"><tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Statistic</td><td>N</td><td>Mean</td><td>St. Dev.</td><td>Min</td><td>Max</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">carat</td><td>53,940</td><td>0.798</td><td>0.474</td><td>0.200</td><td>5.010</td></tr>
+<tr><td style="text-align:left">depth</td><td>53,940</td><td>61.700</td><td>1.430</td><td>43.000</td><td>79.000</td></tr>
+<tr><td style="text-align:left">price</td><td>53,940</td><td>3,933.000</td><td>3,989.000</td><td>326</td><td>18,823</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr></table>
+
+##   apply()
+<li><fr>apply</fr> can return the values that we specify in our functions. </li>
+```{r}
+options(digits=4)
+dss <- as.data.frame(diamonds)
+dss <- dss[, c(1,5,7)]
+Statistics<-c("N", "Mean", "S.D.", "Min", "Pct25","Pct75", "Max")
+A<-apply(dss,2,function(x) c(length(x), mean(x), sd(x),
+                           min(x), quantile(x,c(0.25, 0.75)),max(x)))
+rownames(A)<-Statistics
+A
+```
+<li>What if we want to describe data by groups? <fr>tapply</fr> can  return important statistics by groups. But it can do only one statistics at a time.</li>
+```{r}
+table(sleep$group)
+tapply(sleep$extra, sleep$group, mean)
+tapply(sleep$extra, sleep$group, median)
+tapply(sleep$extra, sleep$group, sd)
+```
+
+## summarize
+<li>`R` basic can provide summary statistics by running <fr>summary</fr> on one variable. `dplyr` can also summarize a variable with more options and flexibilities. </li>
+```{r}
+summary(mtcars$mpg)
+library(dplyr)
+summarize(mtcars, n(), mean(mpg), mean(hp), sd(mpg), 
+          quantile(mpg, c(0.25)), quantile(mpg, c(0.50)), quantile(mpg, c(0.75)))
+```
+
+### group_by
+<li>`dplyr` also allows us to summarize a variable by <fr>group_by</fr>.</li>
+```{r}
+mtcars %>% group_by(cyl)  %>% summarize(mean(mpg))
+```
+## Scatter Plot
+<li>It is necessary to check the scatter plot when we look at the relationship between two variables. They can be two continuous variables or discrete variables.</li>
+<li>For example, we can use `ggplot2` to show how the two variables correspond to each other. Moreover, the regression line and the standard error can be added to the graph.</li>
+
+```{r}
+ggplot(anscombe, aes(x=x1, y=y1)) +
+  geom_point(size=3)  +
+  geom_smooth(method='lm', se=T)
+```
+<li>Standard error means the accuracy of the estimate. However, scatter plot cannot show the accuracy of the model. We can run OLS model as follows.</li>
+```markdown
+fit1 <- lm(data=anscombe, y1 ~ x1)
+stargazer(fit1, type='html')
+```
+<table style="text-align:center"><tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="1" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td>y1</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">x1</td><td>0.500<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.118)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td style="text-align:left">Constant</td><td>3.000<sup>**</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(1.120)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>11</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.667</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.629</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>1.240 (df = 9)</td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>18.000<sup>***</sup> (df = 1; 9)</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+
+<li>If there are one more variable of interest, we can also include it in the scatter plot.</li>
+```{r}
+ggplot(Orange, aes(x=age, y=circumference, group=Tree)) +
+   geom_point(aes(col=Tree), size=3) +
+   geom_smooth(method="loess", se=F) +
+   theme_bw()
+```
+## Marginal Effect
+<li>When we have more than one independent variables and there are interaction term between two variables, we need to estimate the effect of the interaction term. Yiqing Xu (UCSD) provides a `R` package, [interflex](http://yiqingxu.org/software/interaction/RGuide.html), to visualize the linear and non-linear marginal effect of treatment. </li>
+<li>For example, we assume that the effect of mother's IQ on children's scores is conditional on whether or not mothers hold high school degree. We can specify the model as follows.</li>
+\[
+Y_{i}=\beta_{0}+\beta_{1}X_{i}+\beta_{2}D_{i}+\beta_{3}XD
+\]
+```{r}
+library(foreign)
+library(interflex)
+kid <- read.dta("kidiq.dta")
+inter.raw(Y="kid_score",X="mom_iq",D="mom_hs", Xlabel="Mom's IQ", Ylabel="Kid's Score", Dlabel="Mom's High School",data=kid)
+```
+<li>The first graph shows steeper slope than the second one, which implies that students whose mothers holding no high school degree on average have better scores.</li>
+<li>We can estimate the model with OLS.</li>
+```markdown
+M1<-lm(kid_score ~ mom_iq+mom_hs+mom_iq:mom_hs, data=kid)
+stargazer(M1, type='html')
+```
+
+<table style="text-align:center"><tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="1" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td>kid_score</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">mom_iq</td><td>0.969<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.148)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td style="text-align:left">mom_hs</td><td>51.300<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(15.300)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td style="text-align:left">mom_iq:mom_hs</td><td>-0.484<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.162)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td style="text-align:left">Constant</td><td>-11.500</td></tr>
+<tr><td style="text-align:left"></td><td>(13.800)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>434</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.230</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.225</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>18.000 (df = 430)</td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>42.800<sup>***</sup> (df = 3; 430)</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+<li>Again, the coefficient of the interaction term shows the negative effect of mother's high school degree.</li>
+
+# Logarithmic Transformations of Variables
+<li>Variable transformation can "straighten " the relationship between two variables. If the relationship is monotone and simple; always positive or negative, we can use OLS as the functional form. [Benoit](http://kenbenoit.net/assets/courses/ME104/logmodels2.pdf) discussed the log transformatiion of both dependent and independent variables in OLS regression.</li>
+```{r}
+library(car)
+ggplot(data=Leinhardt, aes(x=income, y=infant)) +
+    geom_point() +
+    geom_smooth(method="loess", col="black")
+```
+
+<li>We can take logarithmetic of both two variables because most of observatiosn are located in the lower-left corner; both variables are skewed.</li>
+
+```{r}
+par(mfrow=c(1,2))
+hist(Leinhardt$infant, 100, probability = T, col="gray90", main="infant", xlab='')
+hist(Leinhardt$income, 100, probability = T, col="gray90", main="income", xlab='')
+```
+<li>We can plot the logarithm of both variables. We can see they looks more than normal distribution.</li>
+```{r}
+par(mfrow=c(1,2))
+Leinhardt$l.infant = log(Leinhardt$infant)
+Leinhardt$l.income = log(Leinhardt$income)
+hist(Leinhardt$l.infant, 100, probability = T, col="gray90", main="Log infant", xlab='')
+hist(Leinhardt$l.income, 100, probability = T, col="gray90", main="Log income", xlab='')
+```
+
+<li>The scatter plot of the two new variables is  different from the previous one. We can estimate the log-log model: </li>
+\[
+\textrm{log}Y_{i}=\beta_{0}+\textrm{log}X_{i}\beta_{1}+\epsilon_{i}
+\]
+<li>If we take exp on both sides, and remember $\text{exp}(\text{log}(a))=a$</li>
+\[
+Y_{i} &= &\text{exp}^{\beta_{0}+\textrm{log}X_{i}\beta_{1}} \\
+  = & \text{exp}^{beta_{1}\times X{i}} \\
+  = & \text{exp}
+  \]
+<li></li>
+```{r}
+ggplot(data=Leinhardt, aes(x=l.income, y=l.infant)) +
+    geom_point() +
+    geom_smooth(method="lm", col="black")
+```
+
+```markdown
+fit<-lm(data=Leinhardt, l.infant ~ l.income)
+stargazer(fit, type='html')
+```
+
+<table style="text-align:center"><tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="1" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td>l.infant</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">l.income</td><td>-0.512<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.051)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td style="text-align:left">Constant</td><td>7.146<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.317)</td></tr>
+<tr><td style="text-align:left"></td><td></td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>101</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.502</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.497</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>0.687 (df = 99)</td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>99.845<sup>***</sup> (df = 1; 99)</td></tr>
+<tr><td colspan="2" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td style="text-align:right"><sup>
+*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+<li></li>
+# Logistic Regression
+<li>When $Y$ is a dichotomous variable, which is either 0 or 1, we can consider to transform the binary response variable.</li>
+<li>One of the reseasons that OLS is not appropriate for the dichotomous variable is the predicted values would be lower than zero or greater than 1. </li>
+```{r}
+library(ISLR)
+Default2<-Default[, c(1,3)]
+Default2$default<-as.numeric(Default2$default)-1
+fit1<-lm(data=Default2, default ~ balance)
+Default2$predict <- predict(fit1)
+library(reshape2)
+DT <-melt(Default2, id.var="balance", variable.name = "Y")
+ggplot(DT, aes(x=balance, y=value, col=Y)) + 
+  geom_point() +
+  labs(y="Y", x="Balance") +
+  scale_y_continuous(breaks=c(0,1)) +
+  scale_colour_manual(values=c("navyblue", "firebrick"))
+  
+```
+<li>Logit model or logistic regression model uses the following function:</li>
+\[
+\begin{eqnarray}
+\text{logit}(Y=1|X) & = & \text{log} \frac{P_{i}}{1-P_{i}}\\
+& = & \text{log}\frac{p(X)}{1-p(X)}\\
+&=&\beta_{0}+X\beta_{1} 
+\end{eqnarray}
+\]
+Because $\text{exp}(\text{log}(a))=a$, so
+\[
+\frac{p(X)}{1-p(X)} = exp^{\eta}
+\]
+or,
+\[
+p(X)=\frac{e^{\eta}}{1+e^{\eta}}
+\]
+where,
+\[ \eta \equiv \sum \beta_{k}X_{ik}\]
+<li>We can compare the different results of OLS and logistic regression models.</li>
+
+```{r}
+Logit <- glm(data=Default2, default ~ balance,  family=binomial(logit))
+```
+```markdown
+stargazer(fit1, Logit, type="html")
+```
+
+<table style="text-align:center"><tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="2"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="2" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td colspan="2">default</td></tr>
+<tr><td style="text-align:left"></td><td><em>OLS</em></td><td><em>logistic</em></td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td></tr>
+<tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">balance</td><td>0.0001<sup>***</sup></td><td>0.005<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.00000)</td><td>(0.0002)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td></tr>
+<tr><td style="text-align:left">Constant</td><td>-0.075<sup>***</sup></td><td>-10.700<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.003)</td><td>(0.361)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td></tr>
+<tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>10,000</td><td>10,000</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.123</td><td></td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.122</td><td></td></tr>
+<tr><td style="text-align:left">Log Likelihood</td><td></td><td>-798.000</td></tr>
+<tr><td style="text-align:left">Akaike Inf. Crit.</td><td></td><td>1,600.000</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>0.168 (df = 9998)</td><td></td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>1,397.000<sup>***</sup> (df = 1; 9998)</td><td></td></tr>
+<tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="2" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+
+<li>We can plot the predicted probabilities based on the predicted values from the logistics regression model.</li>
+```{r}
+Default3 <- Default[, c(1,3)]
+Default3$default <- as.numeric(Default3$default)-1
+Default3$predict_logit<--10.7+0.005*Default3$balance
+Default3$p<-(exp(Default3$predict_logit))/(1+exp(Default3$predict_logit))
+Default3 <- Default3[, c(1, 2, 4)]
+df <-melt(Default3, id.var="balance", variable.name = "response", value.name = "V")
+
+g1 <-ggplot(df, aes(x=balance, y=V, col=response)) + 
+  geom_point() +
+  labs(y="Y", x="Balance") 
+
+g1 +  scale_y_continuous(breaks=c(0,1)) +
+  scale_colour_manual(values=c("navyblue", "firebrick"))
+```
+
+## Odds Ratio
+
+<li>Odds can be expressed as $\frac{p(x)}{1-p(x)}$.</li>
+<li>Remember that </li>
+\[
+\frac{p(X)}{1-p(X)} = exp^{\beta_{0}+X\beta_{1}}
+\]
+If we take log on both sides,     
+\[
+\begin{eqnarray}
+\textrm{log}\frac{p(X)}{1-p(X)} & = & \textrm{log}(exp^{\beta_{0}+X\beta_{1}}) \\
+= & \beta_{0}+X\beta_{1}
+\end{eqnarray}
+\]
+<li>Increasing $X$ by one unit changes the log odds by $\beta_{1}$. In this study, one-unit increase in **balance** is associated with an increase in the log odds of **default** by 0.0055.</li>
+
+<br>
+
+# Assignments
+
+- 1. Please calculate the aveage temperature and Solar R by month in <blue>airquality</blue>. You may want to remove the NA in the variables by adding *na.rm=T* to the variable that has NA.
+```{r include=FALSE}
+airquality %>% group_by(Month) %>% summarize(mean(Temp), mean(Solar.R, na.rm=T))
+```
+
+- 2. Please examine the effect of *Expend* on *Grad.rate* in <blue>College</blue> of **ISLR** package on a scatter plot and estimate it with `R`.
+```{r include=F}
+library(ISLR)
+College$l.Expend = log(College$Expend)
+ggplot(data=College, aes(x=l.Expend, y=Grad.Rate))+geom_smooth(method='lm')+geom_point()
+m1<-lm(data=College, Grad.Rate ~ l.Expend+Private+l.Expend:Private)
+summary(m1)
+m2<-lm(data=College, Grad.Rate ~ Expend+Private+Expend:Private)
+summary(m2)
+library(interflex)
+
+inter.raw(Y="Grad.Rate",X="l.Expend",D="Private", data=College)
+```
+
+- 3. Please estimate the effect of Ag on Surv in the following dataset.
+```{r}
+library(kableExtra)
+DT <-data.frame(Surv=c(rep(1,11),rep(0,22)),
+                Ag=c(rep(1,9), rep(0,2),rep(1,8),rep(0,14)))
+DT %>% 
+  kable('html') %>% 
+  kable_styling()
+```
+
+```{r include=FALSE}
+glm(Surv ~ Ag, data=DT, family=binomial(logit))
+# OR=e(2.064)=7.875. 
+```

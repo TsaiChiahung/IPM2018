@@ -1,0 +1,109 @@
+---
+title: "Introducing R"
+
+author: "Chia-hung Tsai (Election Study Center, NCCU)"
+job: "東亞所"
+date: 'Wednesday, July 11, 2018, 5:10-6:30 p.m.'
+output: 
+  html_document:
+    toc: TRUE # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+    fig_caption: true
+    #pandoc_args: ["-F","pandoc-crossref"]
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+<style>
+body {
+    background-color: #EEE8AA;
+    font-size: 22px;
+    color: #171717;
+    font-family:  Times, "王漢宗細圓體繁", "新細明體", "BiauKai", sans-serif; cursive;
+    line-height: 2;
+}
+blue {font-family: georgia; 
+      color: blue}
+fr  {font-family: georgia; 
+      color: firebrick}
+</style>
+
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, digits = 3)
+options(knitr.table.format = "html", digits = 3)
+```
+
+# About these Courses
+<li>Welcome to Introduction to R. This three-day course will show you how to learn `R` from doing it. We try to teach you skills useful for statistics and data science. Certainly, achieving these goals in 3 seminars is very difficult. There are also a lot more topics to cover. We hope at least you will find `R` a nice tool as you explore data after these classes.</li>
+
+
+---
+
+# Installing `R` and Packages
+<li>Please download R run on [Mac OS X](https://cran.r-project.org/bin/macosx/) or [Windows](https://cran.r-project.org) according to you operation system.</li>
+<li>We would like to recommend RStudio to you after installing `R`. It is a powerful IDE, but it also takes a lot of memory. </li>
+<li>Ater you install `R` and RStudio, you may find it useful to open a new project related to your working directory. From now on, you can easily work on R scripts and data without worrying about your working directory. </li>
+<li>Please install the following packages (install.packages("")):</li>
+ 
+ - dplyr: tidy data
+ - reshape2: long table
+ - ggplot2: visualization
+ - lattice: visualization
+ - foreign: read spss and Stata data.
+ - stargazer: output format
+ - interflex: graph of marginal effect by Yiqing Xu and his colleagues
+ - car: John Fox' package, recode function
+ - ISLR: based on Hastie et al. (2008)
+ - UsingR: John Versani's package
+
+
+# Data
+<li>All data and Rmarkdown is uploaded to [My Github](https://github.com/TsaiChiahung/IPM2018). You can either folk or clone the whole directory to your Github or your computer. To be fair, I am also new to Github. I think it will help your research a lot so you may want to get familiar with it.</li>
+
+# Class html
+<li>I use Rmarkdown to write the class material. A html file is not easy to read but easy to update. Hopefully it won't be changed too many times.</li>
+
+- Day 1: http://rpubs.com/chiahung_tsai/lecure0711_2018_syllabus
+- Day 1: http://rpubs.com/chiahung_tsai/IPM2018_1
+- Day 2: http://rpubs.com/chiahung_tsai/IPM2018_2
+- Day 3: http://rpubs.com/chiahung_tsai/IPM2018_3
+
+# Resources
+<li>If you are a beginner of `R` and struggle to convert to `R` from SAS, Stata or SPSS, [UCLA's IDRE](https://stats.idre.ucla.edu) provides annotated results, learning modules, and important documentation for free. This website is well-known for its convenience and capacity.</li>
+<li>The 2014 Data Scientist Conference (DSC) provided a series of html slides. The idea of ETL（Extract-Transform-Load）is the main theme of these slides. You can step-by-step install the `DSC2014Tutorial` package and open them.</li>
+```{r ETL1, eval=FALSE}
+deps <- available.packages("http://taiwanrusergroup.github.io/R-2014/src/contrib")[1,"Imports"]
+pkgs <- strsplit(gsub("\\s", "", deps), ",")[[1]]
+for(i in seq_along(pkgs)) {
+  # You can change your favorite repository
+  if (require(pkgs[i], character.only = TRUE)) next
+  install.packages(pkgs[i], repo = "http://cran.csie.ntu.edu.tw")
+}
+install.packages('DSC2014Tutorial', repo = 'http://taiwanrusergroup.github.io/R-2014', type = 'source')
+```
+
+<li>If you successfully install the package, you can load the library and open the slides.</li>
+```{r ETL2, eval=FALSE}
+library(DSC2014Tutorial)
+slides("Basic")
+slides("ETL1")
+slides("ETL2")
+slides("DataAnalysis")
+slides("Visualization1")
+slides("Visualization2")
+slides("Visualization3")
+```
+
+<li>[Cookbook for R](http://www.cookbook-r.com) and [Quick-R](https://www.statmethods.net) are worth of visiting if you need some quick help. </li>
+<li>If you want to know how to apply `R` to machine learning, classification, cross-validation and other topics, please download Trevor Hastie, Robert Tibshirani, and Jerome Friedman, 2008. *The Elements of Statistical Learning: Data Mining, Inference, and Prediction* (https://web.stanford.edu/~hastie/Papers/ESLII.pdf)</li>
+
+
+
